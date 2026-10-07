@@ -1,0 +1,66 @@
+# Python
+
+**pycache**/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Isaac Lab / Isaac Sim generated files
+
+_isaac_sim/
+logs/
+outputs/
+.cache/
+.omniverse/
+.kit/
+*.log
+
+# TensorBoard
+
+events.out.tfevents.*
+
+# RL checkpoints
+
+model_*.pt
+checkpoint*.pt
+*.ckpt
+
+# Python pickle files
+
+*.pkl
+
+# Temporary files
+
+tmp/
+temp/
+
+# Large generated datasets
+
+*.h5
+*.hdf5
+
+# Videos - uncomment if videos become too large for Git
+
+# *.mp4
+
+# *.avi
+
+# *.mov

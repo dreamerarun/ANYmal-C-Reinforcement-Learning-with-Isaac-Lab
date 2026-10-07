@@ -1,0 +1,190 @@
+--- git status ---
+HEAD detached at v2.1.0
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   apps/isaaclab.python.headless.kit
+	modified:   apps/isaaclab.python.kit
+	modified:   source/isaaclab/isaaclab/app/app_launcher.py
+	modified:   source/isaaclab/isaaclab/sim/utils.py
+	modified:   source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/agents/rsl_rl_ppo_cfg.py
+	modified:   source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/flat_env_cfg.py
+	modified:   source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/velocity_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	apps/isaaclab.python.kit.backup
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/apps/isaaclab.python.headless.kit b/apps/isaaclab.python.headless.kit
+index 9e9b07f048..9006c330e8 100644
+--- a/apps/isaaclab.python.headless.kit
++++ b/apps/isaaclab.python.headless.kit
+@@ -20,6 +20,13 @@ app.version = "4.5.0"
+ ##################################
+ # Omniverse related dependencies #
+ ##################################
++[settings]
++app.exts.folders = [
++    "${exe-path}/../exts",
++    "${exe-path}/../extscache",
++    "${exe-path}/../apps",
++]
++
+ [dependencies]
+ "omni.physx" = {}
+ "omni.physx.tensors" = {}
+diff --git a/apps/isaaclab.python.kit b/apps/isaaclab.python.kit
+index abb9adaa68..7380d27681 100644
+--- a/apps/isaaclab.python.kit
++++ b/apps/isaaclab.python.kit
+@@ -1,3 +1,11 @@
++
++[settings]
++app.exts.folders = [
++    "${app}/../exts",
++    "${app}/../extscache",
++    "${app}/../exts/omni.isaac.ml_archive/pip_prebundle",
++]
++
+ ##
+ # Adapted from: _isaac_sim/apps/isaacsim.exp.base.kit
+ ##
+@@ -91,7 +99,7 @@ keywords = ["experience", "app", "usd"]
+ "omni.kit.window.stage" = {}
+ "omni.kit.window.status_bar" = {}
+ "omni.kit.window.toolbar" = {}
+-"omni.physx.stageupdate" = {}
++# # "omni.physx.stageupdate" = {}  # in bundle  # included in omni.physx.bundle
+ "omni.rtx.settings.core" = {}
+ "omni.uiaudio" = {}
+ "omni.usd.metrics.assembler.ui" = {}
+diff --git a/source/isaaclab/isaaclab/app/app_launcher.py b/source/isaaclab/isaaclab/app/app_launcher.py
+index fce2dac292..78836c06da 100644
+--- a/source/isaaclab/isaaclab/app/app_launcher.py
++++ b/source/isaaclab/isaaclab/app/app_launcher.py
+@@ -827,7 +827,7 @@ class AppLauncher:
+         carb_settings_iface.set_bool("/physics/fabricUpdateTransformations", self._rendering_enabled())
+ 
+         # disable physics backwards compatibility check
+-        carb_settings_iface.set_int(physx_impl.SETTING_BACKWARD_COMPATIBILITY, 0)
++        # carb_settings_iface.set_int(physx_impl.SETTING_BACKWARD_COMPATIBILITY, 0)  # removed: renamed in PhysX 107.x
+ 
+     def _hide_stop_button(self):
+         """Hide the stop button in the toolbar.
+diff --git a/source/isaaclab/isaaclab/sim/utils.py b/source/isaaclab/isaaclab/sim/utils.py
+index 36ab6dd2a8..f545a3596f 100644
+--- a/source/isaaclab/isaaclab/sim/utils.py
++++ b/source/isaaclab/isaaclab/sim/utils.py
+@@ -71,7 +71,7 @@ def safe_set_attribute_on_usd_schema(schema_api: Usd.APISchemaBase, name: str, v
+         # think: do we ever need to create the attribute if it doesn't exist?
+         #   currently, we are not doing this since the schemas are already created with some defaults.
+         omni.log.error(f"Attribute '{attr_name}' does not exist on prim '{schema_api.GetPath()}'.")
+-        raise TypeError(f"Attribute '{attr_name}' does not exist on prim '{schema_api.GetPath()}'.")
++        import carb; carb.log_warn(f"Skipping unknown attribute '{attr_name}' on '{schema_api.GetPath()}' (PhysX API mismatch — safe to ignore)"); return
+ 
+ 
+ def safe_set_attribute_on_usd_prim(prim: Usd.Prim, attr_name: str, value: Any, camel_case: bool):
+diff --git a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/agents/rsl_rl_ppo_cfg.py b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/agents/rsl_rl_ppo_cfg.py
+index 09bd622048..c4c99fddc2 100644
+--- a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/agents/rsl_rl_ppo_cfg.py
++++ b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/agents/rsl_rl_ppo_cfg.py
+@@ -25,9 +25,9 @@ class AnymalCRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+         clip_param=0.2,
+-        entropy_coef=0.005,
++        entropy_coef=0.01,
+         num_learning_epochs=5,
+-        num_mini_batches=4,
++        num_mini_batches=2,
+         learning_rate=1.0e-3,
+         schedule="adaptive",
+         gamma=0.99,
+@@ -42,7 +42,7 @@ class AnymalCFlatPPORunnerCfg(AnymalCRoughPPORunnerCfg):
+     def __post_init__(self):
+         super().__post_init__()
+ 
+-        self.max_iterations = 300
++        self.max_iterations = 1500
+         self.experiment_name = "anymal_c_flat"
+         self.policy.actor_hidden_dims = [128, 128, 128]
+         self.policy.critic_hidden_dims = [128, 128, 128]
+diff --git a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/flat_env_cfg.py b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/flat_env_cfg.py
+index 34a64373d9..c4132bf818 100644
+--- a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/flat_env_cfg.py
++++ b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/anymal_c/flat_env_cfg.py
+@@ -16,8 +16,8 @@ class AnymalCFlatEnvCfg(AnymalCRoughEnvCfg):
+ 
+         # override rewards
+         self.rewards.flat_orientation_l2.weight = -5.0
+-        self.rewards.dof_torques_l2.weight = -2.5e-5
+-        self.rewards.feet_air_time.weight = 0.5
++        self.rewards.dof_torques_l2.weight = -1.0e-5
++        self.rewards.feet_air_time.weight = 1.0
+         # change terrain to flat
+         self.scene.terrain.terrain_type = "plane"
+         self.scene.terrain.terrain_generator = None
+diff --git a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/velocity_env_cfg.py b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/velocity_env_cfg.py
+index 591716ef1e..3ece37ba7c 100644
+--- a/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/velocity_env_cfg.py
++++ b/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/velocity_env_cfg.py
+@@ -109,7 +109,7 @@ class CommandsCfg:
+ class ActionsCfg:
+     """Action specifications for the MDP."""
+ 
+-    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
++    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.25, use_default_offset=True)
+ 
+ 
+ @configclass
+@@ -204,7 +204,7 @@ class EventCfg:
+         func=mdp.reset_joints_by_scale,
+         mode="reset",
+         params={
+-            "position_range": (0.5, 1.5),
++            "position_range": (0.8, 1.2),
+             "velocity_range": (0.0, 0.0),
+         },
+     )
+@@ -224,7 +224,7 @@ class RewardsCfg:
+ 
+     # -- task
+     track_lin_vel_xy_exp = RewTerm(
+-        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
++        func=mdp.track_lin_vel_xy_exp, weight=5.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+     )
+     track_ang_vel_z_exp = RewTerm(
+         func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+@@ -233,8 +233,8 @@ class RewardsCfg:
+     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-2.0)
+     ang_vel_xy_l2 = RewTerm(func=mdp.ang_vel_xy_l2, weight=-0.05)
+     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+-    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
+-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
++    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-1.25e-7)
++    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.005)
+     feet_air_time = RewTerm(
+         func=mdp.feet_air_time,
+         weight=0.125,
+@@ -250,7 +250,7 @@ class RewardsCfg:
+         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*THIGH"), "threshold": 1.0},
+     )
+     # -- optional penalties
+-    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=0.0)
++    flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-5.0)
+     dof_pos_limits = RewTerm(func=mdp.joint_pos_limits, weight=0.0)
+ 
+ 
+@@ -282,7 +282,7 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
+     """Configuration for the locomotion velocity-tracking environment."""
+ 
+     # Scene settings
+-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=2.5)
++    scene: MySceneCfg = MySceneCfg(num_envs=1024, env_spacing=2.5)
+     # Basic settings
+     observations: ObservationsCfg = ObservationsCfg()
+     actions: ActionsCfg = ActionsCfg()
